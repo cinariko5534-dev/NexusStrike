@@ -15,10 +15,14 @@ import { AGENTS } from './agents.js';
 import * as TX from './textures.js';
 import * as sfx from './audio.js';
 import { colliders, removeCollider } from './physics.js';
+import { isMobile, setupTouch, mobileFullscreen } from './touch.js';
+
+const MOBILE = isMobile();
+game.mobile = MOBILE;
 
 // ---------- Görüntü motoru ----------
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ antialias: !MOBILE });
+renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -36,7 +40,7 @@ scene.add(new THREE.HemisphereLight(0xdcebff, 0x8a7656, 1.0));
 const sun = new THREE.DirectionalLight(0xfff1d6, 2.6);
 sun.position.set(35, 60, 25);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(MOBILE ? 1024 : 2048, MOBILE ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 50, bottom: -50, near: 1, far: 200 });
 sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.03;
@@ -156,6 +160,7 @@ let buyOpen = false;
 let paused = false;
 
 function lockPointer() {
+  if (MOBILE) return; // telefonda fare kilidi yok, dokunmatik kontroller kullanılır
   try {
     const p = canvas.requestPointerLock();
     if (p && p.catch) p.catch(() => {});
@@ -164,6 +169,7 @@ function lockPointer() {
 
 // Tam ekran + klavye kilidi: Ctrl+W gibi tarayıcı kısayolları oyunu kapatmasın
 function enterFullscreen() {
+  if (MOBILE) { mobileFullscreen(); return; }
   const el = document.documentElement;
   if (document.fullscreenElement || !el.requestFullscreen) return;
   el.requestFullscreen().then(() => {
@@ -245,6 +251,7 @@ function closeBuy() {
   game.hud.el.buymenu.classList.add('hidden');
   if (game.state === 'playing') lockPointer();
 }
+game.closeBuy = closeBuy;
 
 const chatInput = document.getElementById('chat-input');
 function openChat() {
@@ -573,7 +580,32 @@ function footsteps(dt) {
 }
 
 // ---------- Menüler ----------
-const ui = new UI({ startSearch, cancelSearch, lockAgent, leave, applySettings, resume: () => { enterFullscreen(); lockPointer(); ui.hideAll(); } });
+const ui = new UI({ startSearch, cancelSearch, lockAgent, leave, applySettings, resume: () => { enterFullscreen(); lockPointer(); ui.hideAll(); paused = false; } });
+
+// ---------- Mobil ----------
+const touchEl = document.getElementById('touch');
+const spikeBtn = document.getElementById('t-spike');
+if (MOBILE) {
+  setupTouch({
+    input,
+    toggleBuy,
+    openPause: () => {
+      input.keys.clear();
+      input.mouseDown = false;
+      ui.show('screen-pause');
+      paused = game.isHost && (!game.net || game.net.clientCount === 0);
+    },
+  });
+  document.getElementById('rotate-hint').classList.remove('hidden');
+}
+function updateTouchUi() {
+  if (!MOBILE) return;
+  const show = game.state === 'playing' && !ui.current && !buyOpen;
+  touchEl.classList.toggle('hidden', !show);
+  const me = game.local, m = game.match;
+  const spike = !!me && !!m && me.alive && (me.hasSpike || (m.mode.allSpikes && me.side === 'atk' && m.spike.state === 'carried'));
+  spikeBtn.style.display = spike ? 'block' : 'none';
+}
 
 // ---------- Oyun döngüsü ----------
 const clock = new THREE.Clock();
@@ -585,6 +617,7 @@ function frame() {
 function tick(dt, draw = true) {
   game.time += dt;
   ui.update(dt);
+  updateTouchUi();
   const inMatch = (game.state === 'playing' || game.state === 'end') && game.match;
   if (inMatch) {
     const m = game.match;

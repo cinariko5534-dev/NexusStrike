@@ -45,6 +45,7 @@ export class HUD {
     this.buildAbilityBar();
     this.mapCanvas = null;
     this.el.buymenu.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]')) { game.closeBuy?.(); return; }
       const b = e.target.closest('[data-buy]');
       if (b && game.local) {
         game.match.requestBuy(game.local, b.dataset.buy);
@@ -298,7 +299,8 @@ export class HUD {
     const canBuy = game.match.phase === 'buy' && game.match.mode.economy;
     this.el.buymenu.innerHTML = `
       <div class="buy-head"><h2>MARKET</h2><div class="buy-credits">¤ ${c.credits}</div>
-      <div class="buy-note">${canBuy ? 'Satın almak için tıkla. Kapatmak için B.' : 'Satın alma sadece raund başındaki satın alma aşamasında yapılabilir.'}</div></div>
+      <div class="buy-note">${canBuy ? 'Satın almak için tıkla. Kapatmak için B.' : 'Satın alma sadece raund başındaki satın alma aşamasında yapılabilir.'}</div>
+      <button class="btn buy-close" data-close="1">KAPAT</button></div>
       <div class="buy-grid">${groups}${armor}${abil}</div>`;
   }
 

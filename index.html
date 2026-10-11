@@ -2,7 +2,11 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f1923">
   <title>NEXUS STRIKE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -83,6 +87,26 @@
     <div id="fps"></div>
   </div>
   <div id="click-to-play" class="hidden">Oyuna dönmek için TIKLA</div>
+
+  <!-- ================= MOBİL DOKUNMATİK KONTROLLER ================= -->
+  <div id="touch" class="hidden">
+    <div id="look-zone"></div>
+    <div id="joy-zone"></div>
+    <div id="joy-base"><div id="joy-knob"></div></div>
+    <button id="t-fire" class="tbtn big" data-aim="1">ATEŞ</button>
+    <button id="t-fire2" class="tbtn" data-aim="1">✸</button>
+    <button id="t-jump" class="tbtn">⤒</button>
+    <button id="t-crouch" class="tbtn">⤓</button>
+    <button id="t-reload" class="tbtn small">R</button>
+    <button id="t-scope" class="tbtn small">◎</button>
+    <button id="t-use" class="tbtn small">F</button>
+    <button id="t-swap" class="tbtn small">⇄</button>
+    <button id="t-spike" class="tbtn small">◆</button>
+    <button id="t-buy" class="tbtn top">B</button>
+    <button id="t-score" class="tbtn top">☰</button>
+    <button id="t-menu" class="tbtn top">❚❚</button>
+  </div>
+  <div id="rotate-hint" class="hidden"><div>📱↻</div><p>Oynamak için telefonunu <b>yatay</b> çevir</p></div>
 
   <!-- ================= ANA EKRAN ================= -->
   <div id="screen-main" class="screen hidden">
