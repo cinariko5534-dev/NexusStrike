@@ -132,11 +132,16 @@ export function buildViewModel(key, sleeve = 0x3a3f4a) {
   const c = def.color ?? 0x24272e, a = def.accent ?? 0x7b4bd6;
   switch (def.model) {
     case 'knife': {
-      g.add(part(0.03, 0.04, 0.12, 0x1c1c22, 0, -0.06, 0.05));
-      g.add(part(0.012, 0.05, 0.22, 0xd8dde6, 0, -0.05, -0.12, { metal: 0.9, rough: 0.2 }));
-      g.add(part(0.06, 0.012, 0.03, a, 0, -0.04, -0.01, { emissive: a, ei: 0.3 }));
+      // kabza, siper, bıçak ağzı ve kanal çizgisi
+      g.add(part(0.035, 0.045, 0.14, 0x1c1c22, 0, -0.06, 0.06, { rough: 0.8, metal: 0 }));
+      g.add(part(0.038, 0.012, 0.14, 0x7b4bd6, 0, -0.035, 0.06, { emissive: 0x7b4bd6, ei: 0.4 }));
+      const steel = { metal: 0.25, rough: 0.25, emissive: 0x3a4048, ei: 0.5 };
+      g.add(part(0.075, 0.02, 0.03, 0x9aa3ad, 0, -0.05, -0.02, steel));
+      g.add(part(0.012, 0.06, 0.3, 0xe3e8ef, 0, -0.045, -0.18, steel));
+      g.add(part(0.013, 0.012, 0.26, 0xb8c0ca, 0, -0.025, -0.17, steel));
+      g.add(part(0.011, 0.035, 0.06, 0xe3e8ef, 0, -0.03, -0.35, { ...steel, rx: -0.5 }));
       addArms(g, sleeve, 0.06, 0, false);
-      g.userData.muzzle = new THREE.Vector3(0, -0.05, -0.24);
+      g.userData.muzzle = new THREE.Vector3(0, -0.05, -0.36);
       break;
     }
     case 'blades': {
@@ -652,6 +657,13 @@ export class GunController {
     let y = base.y - Math.abs(Math.cos(this.bobT)) * 0.014 * sp;
     let z = base.z + this.kick * 0.05;
     let rx = this.kick * 0.1, rz = 0;
+    if (def.melee) {
+      // bıçak savurma: sağdan sola kesme hareketi
+      rx = -this.kick * 0.5;
+      rz = this.kick * 1.1;
+      x -= this.kick * 0.12;
+      y += this.kick * 0.04;
+    }
     if (this.zoomLevel > 0 && !def.zoom) { x = 0.0; y = -0.11; z = base.z + 0.05; }
     if (this.reloadT > 0) {
       const t = 1 - this.reloadT / this.reloadTotal;

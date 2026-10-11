@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEXUS STRIKE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Online bağlantı kütüphanesi (PeerJS) -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- Three.js 3D motoru -->
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <!-- Dosyaya çift tıklayarak açılırsa uyarı göster -->
+  <div id="file-warning" class="hidden">
+    <h1>OYUN BÖYLE AÇILMAZ</h1>
+    <p>Bu dosyaya çift tıklayınca tarayıcı oyunun kodlarını güvenlik nedeniyle engelliyor.</p>
+    <p>Oyunu açmak için klasördeki <b>baslat.bat</b> dosyasına çift tıkla ya da internetteki linki kullan.</p>
+  </div>
+  <script>
+    if (location.protocol === 'file:') document.getElementById('file-warning').classList.remove('hidden');
+  </script>
+
+  <!-- ================= OYUN ARAYÜZÜ ================= -->
+  <div id="hud" class="hidden">
+    <canvas id="minimap" width="220" height="220"></canvas>
+
+    <div id="topbar">
+      <div id="team-left" class="team-icons"></div>
+      <div class="score ally" id="score-ally">0</div>
+      <div id="round-box">
+        <div id="round-timer">0:00</div>
+        <div id="spike-icon">◆ SPIKE</div>
+        <div id="round-label"></div>
+      </div>
+      <div class="score enemy" id="score-enemy">0</div>
+      <div id="team-right" class="team-icons"></div>
+    </div>
+
+    <div id="killfeed"></div>
+    <div id="banner"><div id="banner-big"></div><div id="banner-small"></div></div>
+    <div id="toast"></div>
+    <div id="status-text"></div>
+    <div id="spectate"></div>
+
+    <div id="crosshair">
+      <div class="ch t"></div><div class="ch b"></div><div class="ch l"></div><div class="ch r"></div><div class="dot"></div>
+    </div>
+    <div id="hitmarker"></div>
+    <div id="prompt"></div>
+    <div id="action-bar">
+      <div id="action-label"></div>
+      <div class="track"><div id="action-fill"></div><div id="action-half"></div></div>
+    </div>
+
+    <div id="bottom-left">
+      <div class="stat hp"><span id="hpval">100</span><small>CAN</small><div class="bar"><div id="hpbar"></div></div></div>
+      <div class="stat armor"><span id="armorval">0</span><small>ZIRH</small></div>
+    </div>
+    <div id="abilities"></div>
+    <div id="bottom-right">
+      <div id="weapon-slots"></div>
+      <div id="spike-badge">◆ SPIKE SENDE <small>4 ile çıkar</small></div>
+      <div id="credits"></div>
+      <div id="weaponname">KESTREL</div>
+      <div id="ammo"><span id="ammoval">12</span><span class="sep">/</span><span id="reserveval">36</span></div>
+      <div id="reloadhint">R — DOLDUR</div>
+    </div>
+
+    <div id="chat"><div id="chat-log"></div><input id="chat-input" class="hidden" maxlength="120" placeholder="Mesaj yaz, Enter ile gönder" autocomplete="off"></div>
+
+    <div id="scope"><div class="scope-ring"></div><div class="scope-h"></div><div class="scope-v"></div></div>
+    <div id="empress-fx"></div>
+    <div id="nearsight"></div>
+    <div id="blind"></div>
+    <div id="damage-vignette"></div>
+    <div id="scoreboard" class="hidden"></div>
+    <div id="buymenu" class="hidden"></div>
+    <div id="fps"></div>
+  </div>
+  <div id="click-to-play" class="hidden">Oyuna dönmek için TIKLA</div>
+
+  <!-- ================= ANA EKRAN ================= -->
+  <div id="screen-main" class="screen hidden">
+    <div class="main-left">
+      <div class="logo">NEXUS<span>STRIKE</span></div>
+      <div class="tagline">Taktiksel nişancı · 12 ajan · 4 mod · Online</div>
+      <nav>
+        <button id="btn-play" class="nav-btn big">OYNA</button>
+        <button id="btn-agents" class="nav-btn">AJANLAR</button>
+        <button id="btn-settings" class="nav-btn">AYARLAR</button>
+        <button id="btn-help" class="nav-btn">NASIL OYNANIR</button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ================= MOD SEÇİMİ ================= -->
+  <div id="screen-play" class="screen hidden">
+    <div class="panel wide">
+      <h1 class="title">MOD SEÇ</h1>
+      <p class="hint">Online biri varsa maçına katılırsın. Kimse yoksa maç botlarla hemen başlar; sonra gelenler botların yerine geçer.</p>
+      <div id="mode-list"></div>
+      <div class="row">
+        <button id="play-back" class="btn ghost">GERİ</button>
+        <button id="btn-start" class="btn primary">MAÇ BUL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAÇ ARANIYOR ================= -->
+  <div id="screen-search" class="screen hidden">
+    <div class="panel center">
+      <div class="spinner"></div>
+      <h1 class="title">MAÇ ARANIYOR</h1>
+      <p id="search-status"></p>
+      <button id="search-cancel" class="btn ghost">İPTAL</button>
+    </div>
+  </div>
+
+  <!-- ================= AJAN SEÇİMİ ================= -->
+  <div id="screen-agents" class="screen hidden">
+    <div class="agents-wrap">
+      <div class="agents-head">
+        <div><h1 class="title" id="agent-title">AJANINI SEÇ</h1><div id="agent-mode"></div></div>
+        <div id="agent-timer"></div>
+      </div>
+      <div class="agents-body">
+        <div id="agent-detail"></div>
+        <canvas id="agent-preview"></canvas>
+      </div>
+      <div id="agent-grid"></div>
+      <div class="row center"><button id="agent-lock" class="btn primary big">KİLİTLE</button></div>
+    </div>
+  </div>
+
+  <!-- ================= AYARLAR ================= -->
+  <div id="screen-settings" class="screen hidden">
+    <div class="panel">
+      <h1 class="title">AYARLAR</h1>
+      <label>Oyuncu adı <input id="set-name" maxlength="16"></label>
+      <label>Fare hassasiyeti <span id="set-sens-v"></span><input id="set-sens" type="range" min="0.2" max="3" step="0.05"></label>
+      <label>Görüş açısı (FOV) <span id="set-fov-v"></span><input id="set-fov" type="range" min="80" max="120" step="1"></label>
+      <label>Ses <input id="set-vol" type="range" min="0" max="1" step="0.05"></label>
+      <label>Bot zorluğu <select id="set-diff"></select></label>
+      <label>Nişangah rengi <input id="set-ch" type="color"></label>
+      <fieldset>
+        <legend>Gemini yapay zekâ (isteğe bağlı)</legend>
+        <p class="hint">Anahtar girersen botlar raund planlarını ve sohbet mesajlarını Gemini ile yapar. Anahtarı
+          <b>aistudio.google.com</b> adresinden ücretsiz alabilirsin. Anahtar sadece senin tarayıcında saklanır.</p>
+        <label>API anahtarı <input id="set-key" type="password" autocomplete="off" placeholder="AIza..."></label>
+        <label>Model <input id="set-model" placeholder="gemini-2.5-flash"></label>
+        <div class="row"><button id="gemini-test" class="btn ghost">TEST ET</button><span id="gemini-status"></span></div>
+      </fieldset>
+      <div class="row">
+        <button id="settings-back" class="btn ghost">GERİ</button>
+        <button id="settings-save" class="btn primary">KAYDET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= NASIL OYNANIR ================= -->
+  <div id="screen-help" class="screen hidden">
+    <div class="panel wide">
+      <h1 class="title">NASIL OYNANIR</h1>
+      <div class="keys">
+        <div><b>W A S D</b>Hareket</div><div><b>Fare</b>Nişan al</div><div><b>Sol tık</b>Ateş</div>
+        <div><b>Sağ tık</b>Dürbün / nişan</div><div><b>Shift</b>Sessiz yürü</div><div><b>Ctrl</b>Eğil</div>
+        <div><b>Boşluk</b>Zıpla</div><div><b>R</b>Şarjör değiştir</div><div><b>1 / 2 / 3</b>Ana / yan silah / bıçak</div>
+        <div><b>4</b>Spike'ı çıkar (sol tık basılı tut: kur)</div><div><b>F</b>Spike çöz / ulti küresi al</div><div><b>B</b>Market</div>
+        <div><b>C · Q · E</b>Yetenekler</div><div><b>X</b>Ulti</div><div><b>Tab</b>Skor tablosu</div>
+        <div><b>M</b>Büyük harita</div><div><b>Enter</b>Sohbet</div><div><b>Esc</b>Duraklat</div>
+      </div>
+      <p class="hint">Saldıranlar Spike'ı A ya da B bölgesine kurup 45 saniye korur. Savunanlar ya bütün saldıranları öldürür ya da Spike'ı çözer.
+        Leş alınca, ölünce, Spike kurunca/çözünce ve haritadaki mavi <b>ulti kürelerini</b> F ile alınca ulti puanı kazanırsın.
+        Puanların dolunca X ile ultini kullan!</p>
+      <div class="row"><button id="help-back" class="btn ghost">GERİ</button></div>
+    </div>
+  </div>
+
+  <!-- ================= DURAKLATMA ================= -->
+  <div id="screen-pause" class="screen hidden">
+    <div class="panel center">
+      <h1 class="title">DURAKLATILDI</h1>
+      <button id="pause-resume" class="btn primary">DEVAM ET</button>
+      <button id="pause-settings" class="btn ghost">AYARLAR</button>
+      <button id="pause-leave" class="btn danger">MAÇTAN AYRIL</button>
+    </div>
+  </div>
+
+  <!-- ================= MAÇ SONU ================= -->
+  <div id="screen-end" class="screen hidden">
+    <div class="panel center">
+      <h1 id="end-title">ZAFER</h1>
+      <div id="end-score"></div>
+      <table id="end-table"></table>
+      <button id="end-menu" class="btn primary">ANA MENÜ</button>
+    </div>
+  </div>
+
+  <!-- ================= MESAJ ================= -->
+  <div id="screen-msg" class="screen hidden">
+    <div class="panel center">
+      <h1 class="title" id="msg-title"></h1>
+      <p id="msg-text"></p>
+      <button id="msg-ok" class="btn primary">TAMAM</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

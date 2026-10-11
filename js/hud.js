@@ -22,7 +22,7 @@ export class HUD {
   constructor() {
     this.el = {
       root: $('hud'), hp: $('hpval'), armor: $('armorval'), hpBar: $('hpbar'),
-      weapon: $('weaponname'), ammo: $('ammoval'), reserve: $('reserveval'), reloadHint: $('reloadhint'), credits: $('credits'), spikeBadge: $('spike-badge'),
+      weapon: $('weaponname'), ammo: $('ammoval'), reserve: $('reserveval'), reloadHint: $('reloadhint'), credits: $('credits'), spikeBadge: $('spike-badge'), weaponSlots: $('weapon-slots'),
       crosshair: $('crosshair'), hitmarker: $('hitmarker'), vignette: $('damage-vignette'),
       killfeed: $('killfeed'), banner: $('banner'), bannerBig: $('banner-big'), bannerSmall: $('banner-small'),
       toast: $('toast'), timer: $('round-timer'), roundLabel: $('round-label'), spikeIcon: $('spike-icon'),
@@ -331,6 +331,21 @@ export class HUD {
     this.set('cr', this.el.credits, m.mode.economy ? `¤ ${me.credits}` : '');
     const hasSpike = me.alive && (me.hasSpike || (m.mode.allSpikes && me.side === 'atk' && m.spike.state === 'carried'));
     this.set('spk', this.el.spikeBadge.style, hasSpike ? 'block' : 'none', 'display');
+
+    // Silah yuvaları: 1 ana silah, 2 tabanca, 3 bıçak, 4 Spike
+    const cur = game.gun?.current;
+    const slots = [
+      ['1', me.loadout.primary],
+      ['2', me.loadout.secondary],
+      ['3', 'knife'],
+    ];
+    if (hasSpike) slots.push(['4', 'spike']);
+    const slotKey = `${slots.map((s) => s[1]).join()}|${cur}|${me.alive}`;
+    if (this.cache.slots !== slotKey) {
+      this.cache.slots = slotKey;
+      this.el.weaponSlots.innerHTML = me.alive ? slots.map(([k, w]) =>
+        `<div class="wslot ${w === cur ? 'cur' : ''} ${w ? '' : 'empty'} ${w === 'spike' ? 'spike' : ''}">${w ? WEAPONS[w].name : '—'}<b>${k}</b></div>`).join('') : '';
+    }
     this.updateAbilities(me);
     this.updateTeams(me);
 

@@ -40,39 +40,69 @@ export function buildAgentModel(agentKey, hit = () => {}) {
   const main = mat(L.main), pants = mat(L.pants), skin = mat(L.skin), hair = mat(L.hair);
   const accent = mat(L.accent, L.accent, 0.7), dark = mat(shade(L.main, 0.45)), boots = mat(0x1a1a1e);
 
-  const legs = [];
+  const glove = mat(0x1c1c22), belt = mat(0x2a2522), metal = mat(0x8a929c);
+
+  // ---- Bacaklar: kalça → uyluk → diz → baldır → bot (yürürken diz bükülür)
+  const legs = [], knees = [];
   for (const side of [-1, 1]) {
     const hip = new THREE.Group();
-    hip.position.set(side * 0.13, 0.9, 0);
-    add(hip, 0.2, 0.75, 0.24, pants, 0, -0.38, 0, 'legs');
-    add(hip, 0.22, 0.14, 0.32, boots, 0, -0.83, 0.04, 'legs');
+    hip.position.set(side * 0.12, 0.95, 0);
+    add(hip, 0.18, 0.46, 0.21, pants, 0, -0.22, 0, 'legs');
+    add(hip, 0.04, 0.16, 0.12, dark, side * 0.1, -0.2, 0.02, null); // yan cep
+    const knee = new THREE.Group();
+    knee.position.set(0, -0.45, 0);
+    hip.add(knee);
+    add(knee, 0.16, 0.42, 0.18, pants, 0, -0.22, 0, 'legs');
+    add(knee, 0.17, 0.1, 0.06, accent, 0, -0.03, 0.09, null); // dizlik
+    add(knee, 0.19, 0.12, 0.3, boots, 0, -0.45, 0.04, 'legs');
+    add(knee, 0.2, 0.03, 0.31, mat(0x0c0c0e), 0, -0.505, 0.04, null);
     g.add(hip);
     legs.push(hip);
+    knees.push(knee);
   }
+
+  // ---- Gövde: karın, göğüs (yelek), kemer, yaka, omuz zırhları
   const body = new THREE.Group();
   g.add(body);
-  add(body, 0.56, 0.72, 0.32, main, 0, 1.27, 0, 'body');
-  add(body, 0.5, 0.08, 0.33, dark, 0, 0.95, 0, 'body');
-  add(body, 0.1, 0.5, 0.02, accent, 0.12, 1.32, 0.165, null);
-  add(body, 0.58, 0.06, 0.34, accent, 0, 1.55, 0, null);
-  // Kollar ve silah: omuz hizasında dönen bir "nişan" grubu (bakılan yöne göre yukarı/aşağı döner)
+  add(body, 0.46, 0.08, 0.26, belt, 0, 0.97, 0, 'body');
+  add(body, 0.08, 0.06, 0.02, metal, 0, 0.97, 0.135, null); // toka
+  add(body, 0.42, 0.3, 0.24, main, 0, 1.15, 0, 'body');
+  add(body, 0.52, 0.36, 0.3, main, 0, 1.45, 0, 'body');
+  add(body, 0.44, 0.26, 0.04, dark, 0, 1.43, 0.16, null); // yelek ön plakası
+  add(body, 0.06, 0.2, 0.02, accent, -0.1, 1.45, 0.185, null);
+  add(body, 0.06, 0.2, 0.02, accent, 0.1, 1.45, 0.185, null);
+  add(body, 0.3, 0.06, 0.28, dark, 0, 1.65, 0, null); // yaka
+  add(body, 0.12, 0.08, 0.12, skin, 0, 1.68, 0, null); // boyun
+  for (const side of [-1, 1]) {
+    add(body, 0.17, 0.11, 0.22, dark, side * 0.33, 1.6, 0, 'body'); // omuz zırhı
+    add(body, 0.175, 0.03, 0.225, accent, side * 0.33, 1.66, 0, null);
+  }
+
+  // ---- Kollar ve silah: omuz hizasında dönen "nişan" grubu (bakılan yöne göre yukarı/aşağı döner)
+  // omuz → üst kol → dirsek → ön kol → eldiven
   const aim = new THREE.Group();
-  aim.position.set(0, 1.52, 0);
+  aim.position.set(0, 1.55, 0);
   body.add(aim);
-  const arm = (x, rz, rx) => {
-    const pivot = new THREE.Group();
-    pivot.position.set(x, 0.02, 0);
-    pivot.rotation.set(rx, 0, rz);
-    aim.add(pivot);
-    add(pivot, 0.13, 0.5, 0.13, main, 0, -0.25, 0, 'body');
-    add(pivot, 0.11, 0.11, 0.11, mat(0x1c1c22), 0, -0.53, 0, null);
+  const arm = (x, shoulder, elbowBend) => {
+    const sh = new THREE.Group();
+    sh.position.set(x, 0, 0);
+    sh.rotation.set(shoulder[0], shoulder[1], shoulder[2]);
+    aim.add(sh);
+    add(sh, 0.12, 0.3, 0.13, main, 0, -0.15, 0, 'body');
+    const elbow = new THREE.Group();
+    elbow.position.set(0, -0.3, 0);
+    elbow.rotation.x = elbowBend;
+    sh.add(elbow);
+    add(elbow, 0.11, 0.28, 0.12, main, 0, -0.14, 0, 'body');
+    add(elbow, 0.115, 0.08, 0.125, accent, 0, -0.22, 0, null); // bileklik
+    add(elbow, 0.1, 0.11, 0.1, glove, 0, -0.32, 0, null);
   };
-  arm(0.31, -0.32, -1.3);  // sağ kol: tetik eli
-  arm(-0.31, 0.45, -1.4);  // sol kol: silahın önünü tutar
+  arm(0.31, [-0.55, 0, -0.35], -1.0);   // sağ kol: kabzayı tutar
+  arm(-0.31, [-0.8, 0, 0.55], -0.7);    // sol kol: silahın önünü tutar
   const gunGroup = new THREE.Group();
-  gunGroup.position.set(0.1, -0.08, 0.5);
+  gunGroup.position.set(0.08, -0.21, 0.38);
   aim.add(gunGroup);
-  const gunMat = mat(0x222222);
+  const gunMat = GUN_MAT;
   const gunBody = add(gunGroup, 0.08, 0.13, 1, gunMat, 0, 0, 0, null);
   const gunAccent = add(gunGroup, 0.085, 0.04, 1, mat(L.accent, L.accent, 0.4), 0, 0.07, 0, null);
   const gunGrip = add(gunGroup, 0.06, 0.14, 0.07, gunMat, 0, -0.1, 0, null, [0.3, 0, 0]);
@@ -90,8 +120,16 @@ export function buildAgentModel(agentKey, hit = () => {}) {
   head.position.set(0, 1.8, 0);
   body.add(head);
   add(head, 0.3, 0.3, 0.3, skin, 0, 0, 0, 'head');
-  add(head, 0.06, 0.04, 0.02, mat(0x111111), -0.07, 0.03, 0.151, null);
-  add(head, 0.06, 0.04, 0.02, mat(0x111111), 0.07, 0.03, 0.151, null);
+  // yüz: gözler (beyaz + göz bebeği), kaşlar, burun, ağız, kulaklar
+  const eyeWhite = mat(0xf2f2f2), pupil = mat(0x16161a), brow = mat(shade(L.hair, 0.8));
+  for (const s of [-1, 1]) {
+    add(head, 0.07, 0.045, 0.02, eyeWhite, s * 0.07, 0.03, 0.151, null);
+    add(head, 0.03, 0.035, 0.02, pupil, s * 0.065, 0.028, 0.158, null);
+    add(head, 0.08, 0.02, 0.02, brow, s * 0.07, 0.075, 0.152, null);
+    add(head, 0.03, 0.08, 0.06, skin, s * 0.158, 0.0, 0.0, null);
+  }
+  add(head, 0.04, 0.06, 0.04, mat(shade(L.skin, 0.9)), 0, -0.02, 0.165, null);
+  add(head, 0.09, 0.018, 0.02, mat(shade(L.skin, 0.6)), 0, -0.08, 0.151, null);
   switch (L.style) {
     case 'ponytail':
       add(head, 0.32, 0.1, 0.32, hair, 0, 0.17, -0.01, 'head');
@@ -160,10 +198,12 @@ export function buildAgentModel(agentKey, hit = () => {}) {
   // sırt çantası / omuz detayı
   add(body, 0.36, 0.4, 0.12, dark, 0, 1.3, -0.2, null);
   add(body, 0.2, 0.06, 0.02, accent, 0, 1.4, -0.265, null);
-  return { group: g, legs, body, head, aim, gun: { body: gunBody, accent: gunAccent, grip: gunGrip, group: gunGroup }, spike };
+  return { group: g, legs, knees, body, head, aim, gun: { body: gunBody, accent: gunAccent, grip: gunGrip, group: gunGroup }, spike };
 }
 
 // Elindeki silaha göre üçüncü şahıs silah uzunluğu
+const GUN_MAT = mat(0x222222);
+const BLADE_MAT = new THREE.MeshStandardMaterial({ color: 0xdfe5ee, metalness: 0.2, roughness: 0.3, emissive: 0x3a4048, emissiveIntensity: 0.5 });
 const GUN_LEN = { sidearm: 0.3, smg: 0.5, shotgun: 0.7, rifle: 0.75, sniper: 1.0, melee: 0.25, ult: 0.4, spike: 0 };
 
 function textSprite(text, color) {
@@ -359,6 +399,10 @@ export class Character {
       const swing = this.modelVel > 0.5 ? Math.sin(game.time * 10) * Math.min(0.6, this.modelVel * 0.1) : 0;
       this.model.legs[0].rotation.x = swing;
       this.model.legs[1].rotation.x = -swing;
+      // geriye giden bacağın dizi bükülür
+      this.model.knees[0].rotation.x = Math.max(0, -swing) * 1.2;
+      this.model.knees[1].rotation.x = Math.max(0, swing) * 1.2;
+      this.model.body.position.y = this.modelVel > 0.5 ? Math.abs(Math.sin(game.time * 10)) * 0.03 : Math.sin(game.time * 2) * 0.008;
       this.model.head.rotation.x = -this.pitch * 0.5;
       this.model.aim.rotation.x = -this.pitch;
     }
@@ -367,7 +411,12 @@ export class Character {
     if (this.gunLen !== len) {
       this.gunLen = len;
       const gm = this.model.gun;
+      const melee = WEAPONS[this.weapon]?.cat === 'melee';
       gm.group.visible = len > 0;
+      gm.body.material = melee ? BLADE_MAT : GUN_MAT;
+      gm.body.scale.x = melee ? 0.025 : 0.08;
+      gm.body.scale.y = melee ? 0.06 : 0.13;
+      gm.accent.visible = !melee;
       gm.body.scale.z = len;
       gm.body.position.z = len / 2 - 0.08;
       gm.accent.scale.z = len * 0.6;
