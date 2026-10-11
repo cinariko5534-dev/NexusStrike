@@ -153,6 +153,51 @@ export function buildMap(scene) {
   addSign('A', 'rgba(255,255,255,0.85)', 4, 41.95, 4.5, -28, 0, -Math.PI / 2);
   addSign('B', 'rgba(255,255,255,0.85)', 4, -41.95, 4.5, -28, 0, Math.PI / 2);
 
+  // ---------- Satın alma aşaması bariyerleri (mavi buzlu cam) ----------
+  // Sadece satın alma aşamasında aktif olur; doğuş bölgesinden çıkışı kapatır.
+  const barrierTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 0, 128);
+    g.addColorStop(0, 'rgba(90,200,255,0.15)');
+    g.addColorStop(1, 'rgba(90,200,255,0.55)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = 'rgba(190,240,255,0.7)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= 128; i += 32) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 128); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const barrierMat = new THREE.MeshBasicMaterial({
+    map: barrierTex, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const barriers = [];
+  const barrier = (x1, z1, x2, z2) => {
+    const w = Math.max(0.2, x2 - x1), d = Math.max(0.2, z2 - z1), h = 7;
+    const geo = new THREE.BoxGeometry(w, h, d);
+    worldUV(geo, w, h, d, 2);
+    const mesh = new THREE.Mesh(geo, barrierMat);
+    mesh.position.set((x1 + x2) / 2, h / 2, (z1 + z2) / 2);
+    mesh.visible = false;
+    mesh.renderOrder = 2;
+    scene.add(mesh);
+    const box = new THREE.Box3(new THREE.Vector3(x1, 0, z1), new THREE.Vector3(x2, h, z2));
+    barriers.push({ mesh, box });
+  };
+  // Saldıran doğuşu: bütün güney şeridi (A uzun, orta, B uzun girişleri kapalı)
+  barrier(-42, 26.9, -22, 27.1);
+  barrier(-6, 26.9, 6, 27.1);
+  barrier(22, 26.9, 42, 27.1);
+  // Savunan doğuşu: duvarların arasındaki kuzey bölge
+  barrier(-12, -24.1, 12, -23.9);
+
   // ---------- Bot yol ağı (waypoint) ----------
   const P = (x, z) => new THREE.Vector3(x, 0, z);
   const nodes = [
@@ -199,6 +244,7 @@ export function buildMap(scene) {
 
   return {
     meshes,
+    barriers,
     nodes,
     edges,
     siteNodes: { A: [1, 22, 23, 24], B: [13, 25, 26, 27] },

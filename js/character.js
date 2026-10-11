@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { game } from './game.js';
 import { AGENTS } from './agents.js';
+import { WEAPONS } from './weapons.js';
 
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 const matCache = new Map();
@@ -54,13 +55,35 @@ export function buildAgentModel(agentKey, hit = () => {}) {
   add(body, 0.5, 0.08, 0.33, dark, 0, 0.95, 0, 'body');
   add(body, 0.1, 0.5, 0.02, accent, 0.12, 1.32, 0.165, null);
   add(body, 0.58, 0.06, 0.34, accent, 0, 1.55, 0, null);
-  // kollar (silah tutar)
-  add(body, 0.14, 0.55, 0.14, main, 0.33, 1.32, 0.18, 'body', [-1.1, 0, 0]);
-  add(body, 0.14, 0.55, 0.14, main, -0.2, 1.32, 0.28, 'body', [-1.25, 0, -0.5]);
-  add(body, 0.1, 0.1, 0.1, skin, 0.33, 1.2, 0.42, null);
-  // silah
-  const gun = add(body, 0.08, 0.12, 0.62, mat(0x222222), 0.12, 1.36, 0.48, null);
-  gun.castShadow = true;
+  // Kollar ve silah: omuz hizasında dönen bir "nişan" grubu (bakılan yöne göre yukarı/aşağı döner)
+  const aim = new THREE.Group();
+  aim.position.set(0, 1.52, 0);
+  body.add(aim);
+  const arm = (x, rz, rx) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 0.02, 0);
+    pivot.rotation.set(rx, 0, rz);
+    aim.add(pivot);
+    add(pivot, 0.13, 0.5, 0.13, main, 0, -0.25, 0, 'body');
+    add(pivot, 0.11, 0.11, 0.11, mat(0x1c1c22), 0, -0.53, 0, null);
+  };
+  arm(0.31, -0.32, -1.3);  // sağ kol: tetik eli
+  arm(-0.31, 0.45, -1.4);  // sol kol: silahın önünü tutar
+  const gunGroup = new THREE.Group();
+  gunGroup.position.set(0.1, -0.08, 0.5);
+  aim.add(gunGroup);
+  const gunMat = mat(0x222222);
+  const gunBody = add(gunGroup, 0.08, 0.13, 1, gunMat, 0, 0, 0, null);
+  const gunAccent = add(gunGroup, 0.085, 0.04, 1, mat(L.accent, L.accent, 0.4), 0, 0.07, 0, null);
+  const gunGrip = add(gunGroup, 0.06, 0.14, 0.07, gunMat, 0, -0.1, 0, null, [0.3, 0, 0]);
+  // sırttaki Spike (taşıyorsa görünür)
+  const spike = new THREE.Group();
+  add(spike, 0.22, 0.32, 0.16, mat(0x2a2d34), 0, 0, 0, null);
+  add(spike, 0.23, 0.05, 0.17, mat(0xff4655, 0xff2244, 1), 0, 0.12, 0, null);
+  add(spike, 0.06, 0.1, 0.06, mat(0x9ff7ff, 0x6fe7ff, 1), 0, 0.2, 0, null);
+  spike.position.set(0, 1.3, -0.33);
+  spike.visible = false;
+  body.add(spike);
 
   // kafa
   const head = new THREE.Group();
@@ -137,8 +160,11 @@ export function buildAgentModel(agentKey, hit = () => {}) {
   // sırt çantası / omuz detayı
   add(body, 0.36, 0.4, 0.12, dark, 0, 1.3, -0.2, null);
   add(body, 0.2, 0.06, 0.02, accent, 0, 1.4, -0.265, null);
-  return { group: g, legs, body, head };
+  return { group: g, legs, body, head, aim, gun: { body: gunBody, accent: gunAccent, grip: gunGrip, group: gunGroup }, spike };
 }
+
+// Elindeki silaha göre üçüncü şahıs silah uzunluğu
+const GUN_LEN = { sidearm: 0.3, smg: 0.5, shotgun: 0.7, rifle: 0.75, sniper: 1.0, melee: 0.25, ult: 0.4, spike: 0 };
 
 function textSprite(text, color) {
   const c = document.createElement('canvas');
@@ -334,7 +360,20 @@ export class Character {
       this.model.legs[0].rotation.x = swing;
       this.model.legs[1].rotation.x = -swing;
       this.model.head.rotation.x = -this.pitch * 0.5;
+      this.model.aim.rotation.x = -this.pitch;
     }
+    // Elindeki silahın boyu, sırttaki Spike
+    const len = GUN_LEN[WEAPONS[this.weapon]?.cat] ?? 0.7;
+    if (this.gunLen !== len) {
+      this.gunLen = len;
+      const gm = this.model.gun;
+      gm.group.visible = len > 0;
+      gm.body.scale.z = len;
+      gm.body.position.z = len / 2 - 0.08;
+      gm.accent.scale.z = len * 0.6;
+      gm.accent.position.z = len * 0.45;
+    }
+    this.model.spike.visible = this.hasSpike && this.alive;
     // Ölü karakterin ve görünmez (Kaçış) karakterin yarı saydamlığı
     const ghost = this.st.intangible > 0;
     g.traverse((o) => { if (o.isMesh) o.visible = !ghost || Math.sin(game.time * 30) > 0.6; });

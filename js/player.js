@@ -97,11 +97,12 @@ export class PlayerController {
     c.onGround = moveBody(c.pos, c.vel, dt, RADIUS, c.height, c.onGround ? 0.45 : 0);
     if (!wasGround && c.onGround) sfx.land(0);
 
-    // Satın alma aşamasında doğuş bölgesinden çıkılmaz
-    if (m.phase === 'buy') {
+    // Satın alma aşaması: normal modlarda mavi cam bariyerler engeller.
+    // Akın modunda doğuş noktaları dağınık olduğu için etrafında 8 metrelik alanda kalırsın.
+    if (m.phase === 'buy' && m.mode.prePlanted) {
       const dx = c.pos.x - this.spawnPos.x, dz = c.pos.z - this.spawnPos.z;
       const d = Math.hypot(dx, dz);
-      if (d > 4.5) { c.pos.x = this.spawnPos.x + dx / d * 4.5; c.pos.z = this.spawnPos.z + dz / d * 4.5; }
+      if (d > 8) { c.pos.x = this.spawnPos.x + dx / d * 8; c.pos.z = this.spawnPos.z + dz / d * 8; }
     }
 
     // Ayak sesleri (Shift ile yürürsen ve eğilirsen ses çıkmaz)

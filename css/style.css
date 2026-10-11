@@ -233,6 +233,11 @@ legend { padding: 0 6px; color: var(--gold); letter-spacing: 1px; }
 
 #bottom-right { position: absolute; right: 24px; bottom: 22px; text-align: right; }
 #credits { color: var(--gold); font-weight: 700; font-size: 18px; }
+#spike-badge {
+  display: none; background: rgba(255, 70, 85, 0.85); color: #fff; font-weight: 700; letter-spacing: 2px;
+  padding: 4px 10px; margin-bottom: 6px; font-size: 16px; animation: pulse 1.2s ease-in-out infinite;
+}
+#spike-badge small { font-size: 12px; opacity: 0.85; margin-left: 6px; }
 #weaponname { font-size: 14px; letter-spacing: 3px; opacity: 0.8; font-weight: 700; }
 #ammo { font-weight: 700; }
 #ammoval { font-size: 48px; }

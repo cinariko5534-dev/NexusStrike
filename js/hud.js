@@ -22,7 +22,7 @@ export class HUD {
   constructor() {
     this.el = {
       root: $('hud'), hp: $('hpval'), armor: $('armorval'), hpBar: $('hpbar'),
-      weapon: $('weaponname'), ammo: $('ammoval'), reserve: $('reserveval'), reloadHint: $('reloadhint'), credits: $('credits'),
+      weapon: $('weaponname'), ammo: $('ammoval'), reserve: $('reserveval'), reloadHint: $('reloadhint'), credits: $('credits'), spikeBadge: $('spike-badge'),
       crosshair: $('crosshair'), hitmarker: $('hitmarker'), vignette: $('damage-vignette'),
       killfeed: $('killfeed'), banner: $('banner'), bannerBig: $('banner-big'), bannerSmall: $('banner-small'),
       toast: $('toast'), timer: $('round-timer'), roundLabel: $('round-label'), spikeIcon: $('spike-icon'),
@@ -292,8 +292,8 @@ export class HUD {
       const w = WEAPONS[k];
       return card(k, w.name, w.price, c.loadout.primary === k || c.loadout.secondary === k, `${w.dmg} hasar · ${w.mag} mermi`);
     }).join('')}</div>`).join('');
-    const armor = `<div class="buy-group"><h4>ZIRH</h4>${Object.entries(ARMORS).map(([k, a]) => card(k, a.name, a.price, c.armor >= a.value, `+${a.value}`)).join('')}</div>`;
-    const abil = `<div class="buy-group"><h4>YETENEKLER</h4>${AGENTS[c.agent].abilities.filter((a) => a.key === 'C' || a.key === 'Q').map((a) =>
+    const armor = `<div class="buy-group"><h4>SHIELDS</h4>${Object.entries(ARMORS).map(([k, a]) => card(k, a.name, a.price, c.armor >= a.value, `+${a.value}`)).join('')}</div>`;
+    const abil = `<div class="buy-group"><h4>ABILITIES</h4>${AGENTS[c.agent].abilities.filter((a) => a.key === 'C' || a.key === 'Q').map((a) =>
       card(a.key, `${a.key} · ${a.name}`, a.cost, c.charges[a.key] >= a.charges, `${c.charges[a.key]}/${a.charges}`)).join('')}</div>`;
     const canBuy = game.match.phase === 'buy' && game.match.mode.economy;
     this.el.buymenu.innerHTML = `
@@ -329,6 +329,8 @@ export class HUD {
     this.el.hp.parentElement.classList.toggle('low', me.health <= 30);
     this.set('hpw', this.el.hpBar.style, `${Math.max(0, me.health)}%`, 'width');
     this.set('cr', this.el.credits, m.mode.economy ? `¤ ${me.credits}` : '');
+    const hasSpike = me.alive && (me.hasSpike || (m.mode.allSpikes && me.side === 'atk' && m.spike.state === 'carried'));
+    this.set('spk', this.el.spikeBadge.style, hasSpike ? 'block' : 'none', 'display');
     this.updateAbilities(me);
     this.updateTeams(me);
 

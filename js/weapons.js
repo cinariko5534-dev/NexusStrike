@@ -9,82 +9,82 @@ const S = (base, move, air, grow, max, extra = {}) => ({ base, move, air, grow, 
 // Valorant silahlarına benzer değerler (isimler oyuna özgü)
 export const WEAPONS = {
   knife: {
-    name: 'HANÇER', cat: 'melee', price: 0, dmg: 50, headMult: 1, legMult: 1, rate: 1.8, range: 2.6,
+    name: 'KNIFE', cat: 'melee', price: 0, dmg: 50, headMult: 1, legMult: 1, rate: 1.8, range: 2.6,
     melee: true, speed: 6.75, equip: 0.35, sound: 'knife', model: 'knife',
   },
   kestrel: {
-    name: 'KESTREL', cat: 'sidearm', price: 0, dmg: 26, headMult: 3, legMult: 0.85, rate: 6.75, mag: 12, reserve: 36,
+    name: 'CLASSIC', cat: 'sidearm', price: 0, dmg: 26, headMult: 3, legMult: 0.85, rate: 6.75, mag: 12, reserve: 36,
     auto: false, reload: 1.75, equip: 0.4, spread: S(0.004, 0.03, 0.1, 0.008, 0.04), recoil: 0.018,
     speed: 5.73, sound: 'pistol', model: 'pistol', color: 0x2b2f38, accent: 0x7b4bd6,
   },
   nova: {
-    name: 'NOVA', cat: 'sidearm', price: 500, dmg: 30, headMult: 3.5, legMult: 0.85, rate: 6.75, mag: 15, reserve: 45,
+    name: 'GHOST', cat: 'sidearm', price: 500, dmg: 30, headMult: 3.5, legMult: 0.85, rate: 6.75, mag: 15, reserve: 45,
     auto: false, reload: 1.5, equip: 0.4, spread: S(0.003, 0.025, 0.1, 0.007, 0.035), recoil: 0.016,
     speed: 5.73, sound: 'silenced', silenced: true, model: 'pistol', color: 0x3a3a3a, accent: 0x3dffc5, long: true,
   },
   marshal: {
-    name: 'MARŞAL', cat: 'sidearm', price: 800, dmg: 55, headMult: 2.9, legMult: 0.85, rate: 4, mag: 6, reserve: 24,
+    name: 'SHERIFF', cat: 'sidearm', price: 800, dmg: 55, headMult: 2.9, legMult: 0.85, rate: 4, mag: 6, reserve: 24,
     auto: false, reload: 2.25, equip: 0.5, spread: S(0.003, 0.04, 0.12, 0.02, 0.06), recoil: 0.05,
     speed: 5.73, sound: 'sniper', model: 'pistol', color: 0x6b4a2a, accent: 0xd8c39a, big: true,
   },
   hornet: {
-    name: 'HORNET', cat: 'smg', price: 1600, dmg: 26, headMult: 3, legMult: 0.85, rate: 13.3, mag: 30, reserve: 90,
+    name: 'SPECTRE', cat: 'smg', price: 1600, dmg: 26, headMult: 3, legMult: 0.85, rate: 13.3, mag: 30, reserve: 90,
     auto: true, reload: 2.25, equip: 0.5, spread: S(0.006, 0.02, 0.1, 0.0025, 0.045), recoil: 0.006,
     speed: 5.73, sound: 'smg', silenced: true, model: 'smg', color: 0x2a2d34, accent: 0xff4655,
   },
   hammer: {
-    name: 'HAMMER', cat: 'shotgun', price: 1850, dmg: 17, headMult: 2, legMult: 0.85, pellets: 12, rate: 3.5, mag: 7,
+    name: 'JUDGE', cat: 'shotgun', price: 1850, dmg: 17, headMult: 2, legMult: 0.85, pellets: 12, rate: 3.5, mag: 7,
     reserve: 21, auto: true, reload: 2.2, equip: 0.6, spread: S(0.055, 0.02, 0.05, 0, 0), recoil: 0.035,
     speed: 5.4, sound: 'shotgun', model: 'shotgun', color: 0x3a2f26, accent: 0xffb547, falloff: 12,
   },
   mastiff: {
-    name: 'MASTİF', cat: 'rifle', price: 2050, dmg: 35, headMult: 3.3, legMult: 0.85, rate: 9.15, mag: 24, reserve: 72,
+    name: 'BULLDOG', cat: 'rifle', price: 2050, dmg: 35, headMult: 3.3, legMult: 0.85, rate: 9.15, mag: 24, reserve: 72,
     auto: true, reload: 2.5, equip: 0.6, spread: S(0.003, 0.065, 0.15, 0.005, 0.055), recoil: 0.011,
     speed: 5.4, sound: 'rifle', model: 'rifle', color: 0x4a4f3a, accent: 0xc9a227,
   },
   vortex: {
-    name: 'VORTEX', cat: 'rifle', price: 2900, dmg: 40, headMult: 4, legMult: 0.85, rate: 9.75, mag: 25, reserve: 75,
+    name: 'VANDAL', cat: 'rifle', price: 2900, dmg: 40, headMult: 4, legMult: 0.85, rate: 9.75, mag: 25, reserve: 75,
     auto: true, reload: 2.5, equip: 0.6, spread: S(0.0025, 0.07, 0.15, 0.004, 0.05), recoil: 0.012,
     speed: 5.4, sound: 'rifle', model: 'rifle', color: 0x24272e, accent: 0x7b4bd6,
   },
   phase: {
-    name: 'PHASE', cat: 'rifle', price: 2900, dmg: 39, headMult: 4, legMult: 0.85, rate: 11, mag: 30, reserve: 90,
+    name: 'PHANTOM', cat: 'rifle', price: 2900, dmg: 39, headMult: 4, legMult: 0.85, rate: 11, mag: 30, reserve: 90,
     auto: true, reload: 2.5, equip: 0.6, spread: S(0.0025, 0.07, 0.15, 0.0035, 0.045), recoil: 0.010,
     speed: 5.4, sound: 'silenced', silenced: true, falloff: 15, model: 'rifle', color: 0xd8d4cc, accent: 0x18a0ff,
   },
   dart: {
-    name: 'DART', cat: 'sniper', price: 950, dmg: 101, headMult: 2, legMult: 0.85, rate: 1.5, mag: 5, reserve: 15,
+    name: 'MARSHAL', cat: 'sniper', price: 950, dmg: 101, headMult: 2, legMult: 0.85, rate: 1.5, mag: 5, reserve: 15,
     auto: false, reload: 2.5, equip: 0.7, spread: S(0.035, 0.08, 0.2, 0, 0, { scoped: 0.0006 }), recoil: 0.04,
     zoom: [2.5], speed: 5.4, sound: 'sniper', model: 'sniper', color: 0x3a4a3a, accent: 0xb8e986,
   },
   longbow: {
-    name: 'LONGBOW', cat: 'sniper', price: 4700, dmg: 150, headMult: 1.7, legMult: 0.85, rate: 0.75, mag: 5, reserve: 10,
+    name: 'OPERATOR', cat: 'sniper', price: 4700, dmg: 150, headMult: 1.7, legMult: 0.85, rate: 0.75, mag: 5, reserve: 10,
     auto: false, reload: 3.7, equip: 1.0, spread: S(0.06, 0.12, 0.25, 0, 0, { scoped: 0.0003 }), recoil: 0.06,
     zoom: [2.5, 5], speed: 5.13, sound: 'sniper', model: 'sniper', color: 0x1e2228, accent: 0xff4655, big: true,
   },
   blades: {
-    name: 'BIÇAK FIRTINASI', cat: 'ult', dmg: 50, headMult: 3, legMult: 1, rate: 3.3, mag: 5,
+    name: 'BLADE STORM', cat: 'ult', dmg: 50, headMult: 3, legMult: 1, rate: 3.3, mag: 5,
     auto: false, reload: 0, equip: 0.3, spread: S(0.001, 0.004, 0.01, 0, 0), recoil: 0.005,
     speed: 6.75, sound: 'knife', model: 'blades',
   },
   rocket: {
-    name: 'ROKETATAR', cat: 'ult', rate: 1, mag: 1, auto: false, equip: 0.5, speed: 5.13, sound: 'rocket', model: 'rocket',
+    name: 'ROCKET LAUNCHER', cat: 'ult', rate: 1, mag: 1, auto: false, equip: 0.5, speed: 5.13, sound: 'rocket', model: 'rocket',
     spread: S(0, 0, 0, 0, 0), recoil: 0.08,
   },
   spike: { name: 'SPIKE', cat: 'spike', speed: 5.4, equip: 0.3, model: 'spike' },
 };
 
 export const ARMORS = {
-  light: { name: 'HAFİF ZIRH', price: 400, value: 25 },
-  heavy: { name: 'AĞIR ZIRH', price: 1000, value: 50 },
+  light: { name: 'LIGHT SHIELDS', price: 400, value: 25 },
+  heavy: { name: 'HEAVY SHIELDS', price: 1000, value: 50 },
 };
 
 export const SHOP = [
-  { title: 'TABANCALAR', items: ['nova', 'marshal'] },
-  { title: 'HAFİF MAKİNELİ', items: ['hornet'] },
-  { title: 'POMPALI', items: ['hammer'] },
-  { title: 'TÜFEKLER', items: ['mastiff', 'vortex', 'phase'] },
-  { title: 'KESKİN NİŞANCI', items: ['dart', 'longbow'] },
+  { title: 'SIDEARMS', items: ['nova', 'marshal'] },
+  { title: 'SMGS', items: ['hornet'] },
+  { title: 'SHOTGUNS', items: ['hammer'] },
+  { title: 'RIFLES', items: ['mastiff', 'vortex', 'phase'] },
+  { title: 'SNIPER RIFLES', items: ['dart', 'longbow'] },
 ];
 
 export function slotOf(key) {

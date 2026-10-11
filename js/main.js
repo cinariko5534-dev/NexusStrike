@@ -14,6 +14,7 @@ import { Net } from './net.js';
 import { AGENTS } from './agents.js';
 import * as TX from './textures.js';
 import * as sfx from './audio.js';
+import { colliders, removeCollider } from './physics.js';
 
 // ---------- Görüntü motoru ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -73,8 +74,14 @@ const spikeMesh = new THREE.Group();
   ring.position.y = 0.36;
   const core = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.25, 8), new THREE.MeshStandardMaterial({ color: 0x9ff7ff, emissive: 0x6fe7ff, emissiveIntensity: 1 }));
   core.position.y = 0.48;
-  spikeMesh.add(base, ring, core);
+  // yerdeki Spike'ın üstünde uzaktan görünen ışık sütunu
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 6, 10, 1, true), new THREE.MeshBasicMaterial({
+    color: 0xff4655, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+  }));
+  beam.position.y = 3.2;
+  spikeMesh.add(base, ring, core, beam);
   spikeMesh.userData.ring = ring;
+  spikeMesh.userData.beam = beam;
   spikeMesh.visible = false;
   scene.add(spikeMesh);
 }
@@ -88,14 +95,31 @@ const orbMeshes = game.world.orbs.map((p) => {
   return m;
 });
 
+// Satın alma aşamasında doğuş bölgelerini kapatan mavi cam bariyerler
+let barriersOn = false;
+function updateBarriers(on) {
+  if (on === barriersOn) return;
+  barriersOn = on;
+  for (const b of game.world.barriers) {
+    b.mesh.visible = on;
+    if (on) colliders.push(b.box); else removeCollider(b.box);
+  }
+}
+
 function updateWorldProps() {
   const m = game.match;
+  updateBarriers(!!m && m.phase === 'buy' && !m.mode.prePlanted && (game.state === 'playing'));
+  if (barriersOn) {
+    const k = 0.75 + Math.sin(game.time * 2) * 0.1;
+    game.world.barriers[0].mesh.material.opacity = k;
+  }
   const sp = m ? m.spike : null;
   spikeMesh.visible = !!sp && (sp.state === 'planted' || sp.state === 'dropped');
   if (spikeMesh.visible) {
     spikeMesh.position.set(sp.pos[0], sp.pos[1], sp.pos[2]);
     const blink = sp.state === 'planted' ? Math.sin(game.time * (m.timer < 10 ? 25 : 8)) > 0 : true;
     spikeMesh.userData.ring.material.emissiveIntensity = blink ? 1.5 : 0.1;
+    spikeMesh.userData.beam.visible = sp.state === 'dropped';
   }
   orbMeshes.forEach((o, i) => {
     o.visible = !!m && !m.orbs[i].taken;
