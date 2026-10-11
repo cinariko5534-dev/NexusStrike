@@ -307,6 +307,7 @@ function cancelSearch() {
 }
 
 function lockAgent(agent) {
+  game.pendingAgent = agent;
   enterFullscreen();
   if (game.pendingRole === 'client') {
     game.state = 'search';
@@ -509,19 +510,43 @@ net.handlers.onHostMessage = (msg) => {
   }
 };
 
+// Maçın sahibi ayrılırsa hata verme: maç bu bilgisayarda botlarla devam eder
 net.handlers.onHostLost = () => {
-  if (game.state === 'playing' || game.state === 'search' || game.state === 'agents') {
-    const wasPlaying = game.state === 'playing';
-    net.close();
-    game.net = null;
-    resetWorld();
-    game.match = null;
-    game.state = 'menu';
-    game.hud.show(false);
-    if (document.pointerLockElement) document.exitPointerLock();
-    ui.message('BAĞLANTI KOPTU', wasPlaying ? 'Maçın sahibi oyundan ayrıldı.' : 'Maça bağlanılamadı.');
+  if (game.isHost) return;
+  lastHostMsg = 0;
+  net.close();
+  game.net = null;
+  game.pendingRole = 'offline';
+  if (game.state === 'agents') return; // ajan seçince botlu maç başlar
+  if (game.state === 'search') {
+    // ajan seçildi, maça bağlanırken sahip çıktı → hemen botlu maç başlat
+    clearTimeout(joinTimer);
+    startHostMatch(game.pendingMode, game.pendingAgent || 'zephyr');
+    return;
   }
+  if (game.state !== 'playing' || !game.match) return;
+  takeOverAsHost();
 };
+
+// İstemciden sunucuya geçiş: diğer herkes bot olur, skor ve raund aynen kalır
+function takeOverAsHost() {
+  const m = game.match;
+  game.isHost = true;
+  game.bots = new BotManager();
+  for (const c of game.chars) {
+    if (c === game.local) continue;
+    c.kind = 'bot';
+    c.peer = null;
+    c.vel.set(0, 0, 0);
+    if (c.model) c.pos.copy(c.model.group.position);
+  }
+  m.nextEvId = 100000; // eski yetenek kimlikleriyle çakışmasın
+  const winner = m.score.findIndex((s) => s >= m.mode.winRounds);
+  m.endAfterPost = winner >= 0 ? winner : null;
+  game.bots.onRoundStart();
+  game.hud.toast('Maç sahibi ayrıldı — maça botlarla devam ediyorsun');
+  m.emit({ t: 'chat', n: 'SİSTEM', m: 'Maç sahibi ayrıldı. Diğer oyuncuların yerine botlar geçti.', tm: game.local?.team ?? 0 });
+}
 
 // Bağlantı kontrolü: uzun süre mesaj gelmezse oyuncu (ya da maç sahibi) ayrılmış sayılır
 setInterval(() => {

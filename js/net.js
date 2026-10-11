@@ -18,21 +18,31 @@ export class Net {
   get available() { return typeof window.Peer === 'function'; }
   get clientCount() { return this.conns.size; }
 
+  // Her modun 4 lobi yuvası var. Bir yuvayı cevap vermeyen (sekmesi uyuyan) bir maç tutuyorsa
+  // kısa sürede bir sonraki yuvaya geçilir; boş yuva bulununca orada maç kurulur.
   async findMatch(modeKey, onStatus) {
     this.cancelled = false;
     if (!this.available) return 'offline';
-    const lobby = LOBBY_PREFIX + modeKey;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    const SLOTS = 4;
+    for (let slot = 0; slot < SLOTS; slot++) {
+      const lobby = `${LOBBY_PREFIX}${modeKey}-${slot}`;
       if (this.cancelled) return 'cancel';
-      onStatus('Online oyuncular aranıyor...');
+      onStatus(slot === 0 ? 'Online oyuncular aranıyor...' : `Online oyuncular aranıyor... (${slot + 1}/${SLOTS})`);
       const j = await this.tryJoin(lobby);
       if (j === 'joined') return 'client';
-      if (j === 'error' || this.cancelled) return this.cancelled ? 'cancel' : 'offline';
-      onStatus('Açık maç bulunamadı — yeni maç kuruluyor...');
-      const h = await this.tryHost(lobby);
-      if (h === 'host') return 'host';
-      if (h === 'error') return 'offline';
-      // 'taken': biri aynı anda lobi kurdu, ona katılmayı dene
+      if (this.cancelled) return 'cancel';
+      if (j === 'error') return 'offline';
+      if (j === 'none') {
+        // Bu yuvada kimse yok: maçı burada kur
+        onStatus('Açık maç bulunamadı — yeni maç kuruluyor...');
+        const h = await this.tryHost(lobby);
+        if (h === 'host') return 'host';
+        if (h === 'error') return 'offline';
+        // 'taken': biri aynı anda kurdu → tekrar katılmayı dene
+        const j2 = await this.tryJoin(lobby);
+        if (j2 === 'joined') return 'client';
+      }
+      // 'stale': yuvayı cevap vermeyen bir maç tutuyor → sonraki yuva
     }
     return 'offline';
   }
@@ -48,8 +58,11 @@ export class Net {
         if (r !== 'joined') peer.destroy();
         resolve(r);
       };
-      const timer = setTimeout(() => finish('none'), 8000);
+      // Lobi var ama bağlantı kurulamıyorsa (maç sahibi cevap vermiyor) 'stale' döner
+      let opened = false;
+      const timer = setTimeout(() => finish(opened ? 'stale' : 'error'), 6000);
       peer.on('open', () => {
+        opened = true;
         const conn = peer.connect(lobby, { reliable: true, serialization: 'json' });
         conn.on('open', () => {
           this.peer = peer;
