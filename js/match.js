@@ -544,7 +544,8 @@ export class Match {
         }
         game.gun?.resetForRound();
         game.controller?.onRoundStart();
-        hud.banner(`RAUND ${e.r}`, this.mode.economy ? 'SATIN ALMA AŞAMASI — B ile market' : (e.site ? `Spike ${e.site} bölgesinde kurulu!` : 'HAZIRLAN'));
+        hud.banner(`RAUND ${e.r}`, e.r === 1 ? `HARİTA: ${game.world.name} · ${this.mode.name}` :
+          (this.mode.economy ? 'SATIN ALMA AŞAMASI — B ile market' : (e.site ? `Spike ${e.site} bölgesinde kurulu!` : 'HAZIRLAN')));
         sfx.roundStart();
         if (me && me.hasSpike) hud.toast('Spike sende! Bölgeye götür: 4 ile çıkar, sol tık basılı tut.');
         else if (me && me.side === 'atk' && !this.mode.prePlanted) hud.toast('Spike bir takım arkadaşında — sırtındaki kırmızı cihaz.');

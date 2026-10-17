@@ -38,43 +38,6 @@ function clearWalk(a, b) {
   return rc.intersectObjects(game.blockers, false).length === 0;
 }
 
-function nearestNode(pos) {
-  const nodes = game.world.nodes;
-  const order = nodes.map((n, i) => [n.distanceTo(pos), i]).sort((a, b) => a[0] - b[0]);
-  for (let k = 0; k < Math.min(6, order.length); k++) {
-    if (clearWalk(pos, nodes[order[k][1]])) return order[k][1];
-  }
-  return order[0][1];
-}
-
-function astar(s, g) {
-  const nodes = game.world.nodes, edges = game.world.edges;
-  const open = new Set([s]);
-  const came = new Map();
-  const gs = new Map([[s, 0]]);
-  const f = new Map([[s, nodes[s].distanceTo(nodes[g])]]);
-  while (open.size) {
-    let cur = null, best = Infinity;
-    for (const n of open) if (f.get(n) < best) { best = f.get(n); cur = n; }
-    if (cur === g) {
-      const path = [cur];
-      while (came.has(cur)) { cur = came.get(cur); path.unshift(cur); }
-      return path;
-    }
-    open.delete(cur);
-    for (const nb of edges[cur]) {
-      const t = gs.get(cur) + nodes[cur].distanceTo(nodes[nb]);
-      if (t < (gs.get(nb) ?? Infinity)) {
-        came.set(nb, cur);
-        gs.set(nb, t);
-        f.set(nb, t + nodes[nb].distanceTo(nodes[g]));
-        open.add(nb);
-      }
-    }
-  }
-  return [s, g];
-}
-
 // Atılan yeteneklerin hedefe düşmesi için açı hesabı (yer çekimi 15)
 function lobDir(from, to, speed) {
   const g = 15;
@@ -480,8 +443,8 @@ class BotBrain {
     if (m.spike.state === 'planted') {
       if (c.side === 'def') return { pos: sp, action: 'defuse', look: sp };
       if (!this.sitePick) {
-        const nodes = w.siteNodes[m.spike.site];
-        this.sitePick = w.nodes[nodes[this.idx % nodes.length]].clone().add(new THREE.Vector3(rand(-1, 1), 0, rand(-1, 1)));
+        const spots = w.siteSpots[m.spike.site];
+        this.sitePick = spots[this.idx % spots.length].clone();
       }
       return { pos: this.sitePick, look: sp };
     }
@@ -500,8 +463,8 @@ class BotBrain {
       const carrier = c.hasSpike || (m.mode.allSpikes && this.idx === 0);
       if (carrier) return { pos: w.plantSpots[site], action: 'plant' };
       if (!this.sitePick) {
-        const nodes = w.siteNodes[site];
-        this.sitePick = w.nodes[nodes[(this.idx + 1) % nodes.length]].clone();
+        const spots = w.siteSpots[site];
+        this.sitePick = spots[(this.idx + 1) % spots.length].clone();
       }
       return { pos: this.sitePick, look: w.siteCenters[site] };
     }
@@ -558,14 +521,8 @@ class BotBrain {
   }
 
   makePath(goal) {
-    const c = this.c;
-    if (clearWalk(c.pos, goal)) return [goal.clone()];
-    const nodes = game.world.nodes;
-    const ids = astar(nearestNode(c.pos), nearestNode(goal));
-    const pts = ids.map((i) => nodes[i].clone());
-    if (pts.length > 1 && clearWalk(c.pos, pts[1])) pts.shift();
-    pts.push(goal.clone());
-    return pts;
+    // Izgara yol bulucu botun gövde genişliğini hesaba katar (köşelerde takılmaz)
+    return game.world.nav.findPath(this.c.pos, goal);
   }
 
   move(dt, wish) {

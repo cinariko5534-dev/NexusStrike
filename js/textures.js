@@ -63,12 +63,11 @@ function brickCanvas(base, mortar, bw, bh, kMin, kMax) {
   return [c, ctx, S];
 }
 
-export function stoneFloor() {
+export function stoneFloor(base = [176, 166, 146], gap = [92, 86, 74], stain = 'rgba(60,55,45,A)') {
   const S = 512;
   const [c, ctx] = makeCanvas(S);
-  ctx.fillStyle = 'rgb(92,86,74)';
+  ctx.fillStyle = rgb(gap);
   ctx.fillRect(0, 0, S, S);
-  const base = [176, 166, 146];
   for (let y = 0; y < S; y += 64) {
     const start = rand(0, 60);
     let x = start;
@@ -79,29 +78,26 @@ export function stoneFloor() {
       x += w;
     }
   }
-  blotches(ctx, S, 40, 'rgba(60,55,45,A)', 10, 50);
+  blotches(ctx, S, 40, stain, 10, 50);
   addNoise(ctx, S, S, 26);
   return toTexture(c);
 }
 
-export function sandWall() {
-  const [c, ctx, S] = brickCanvas([212, 190, 150], [150, 132, 102], 128, 64, 0.86, 1.06);
-  blotches(ctx, S, 30, 'rgba(110,90,60,A)', 15, 60);
+// Tuğla duvar (renkler haritanın temasına göre)
+export function brickWall(base = [212, 190, 150], mortar = [150, 132, 102], stain = 'rgba(110,90,60,A)', stains = 30, bw = 128, bh = 64) {
+  const [c, ctx, S] = brickCanvas(base, mortar, bw, bh, 0.84, 1.06);
+  blotches(ctx, S, stains, stain, 15, 65);
   addNoise(ctx, S, S, 30);
   return toTexture(c);
 }
 
-export function mossWall() {
-  const [c, ctx, S] = brickCanvas([150, 152, 128], [96, 100, 80], 128, 64, 0.8, 1.05);
-  blotches(ctx, S, 60, 'rgba(60,110,40,A)', 15, 70);
-  addNoise(ctx, S, S, 32);
-  return toTexture(c);
-}
+export function sandWall() { return brickWall(); }
+export function mossWall() { return brickWall([150, 152, 128], [96, 100, 80], 'rgba(60,110,40,A)', 60); }
 
-export function concrete() {
+export function concrete(base = [188, 182, 170]) {
   const S = 256;
   const [c, ctx] = makeCanvas(S);
-  ctx.fillStyle = 'rgb(188,182,170)';
+  ctx.fillStyle = rgb(base);
   ctx.fillRect(0, 0, S, S);
   blotches(ctx, S, 30, 'rgba(90,85,75,A)', 8, 40);
   ctx.fillStyle = 'rgba(80,75,65,0.25)';
@@ -150,11 +146,11 @@ export function metal() {
   return toTexture(c);
 }
 
-export function container() {
+export function container(c1 = [52, 108, 136], c2 = [64, 126, 156]) {
   const S = 256;
   const [c, ctx] = makeCanvas(S);
   for (let x = 0; x < S; x += 16) {
-    ctx.fillStyle = (x / 16) % 2 ? 'rgb(52,108,136)' : 'rgb(64,126,156)';
+    ctx.fillStyle = (x / 16) % 2 ? rgb(c1) : rgb(c2);
     ctx.fillRect(x, 0, 16, S);
   }
   blotches(ctx, S, 25, 'rgba(120,70,30,A)', 4, 20);
@@ -220,14 +216,14 @@ export function flash() {
   return toTexture(c, false);
 }
 
-export function sky() {
+export function sky(stops = ['#3f86d6', '#a7cdee', '#e9f1f4', '#c9bfa8', '#8f8676']) {
   const [c, ctx] = makeCanvas(4, 256);
   const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, '#3f86d6');
-  g.addColorStop(0.42, '#a7cdee');
-  g.addColorStop(0.5, '#e9f1f4');
-  g.addColorStop(0.55, '#c9bfa8');
-  g.addColorStop(1, '#8f8676');
+  g.addColorStop(0, stops[0]);
+  g.addColorStop(0.42, stops[1]);
+  g.addColorStop(0.5, stops[2]);
+  g.addColorStop(0.55, stops[3]);
+  g.addColorStop(1, stops[4]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 4, 256);
   const t = toTexture(c, false);

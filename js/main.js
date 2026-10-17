@@ -1,7 +1,8 @@
 // ANA DOSYA: sahneyi kurar, menüleri ve maçı başlatır, girişleri dinler, oyun döngüsünü çalıştırır.
 import * as THREE from 'three';
 import { game } from './game.js';
-import { buildMap } from './map.js';
+import { buildMap, unloadMap } from './map.js';
+import { MAPS, MAP_KEYS } from './maps.js';
 import { Effects } from './decals.js';
 import { HUD } from './hud.js';
 import { UI } from './ui.js';
@@ -36,7 +37,8 @@ scene.background = TX.sky();
 scene.fog = new THREE.Fog(0xc9dbe6, 70, 180);
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 400);
 scene.add(camera);
-scene.add(new THREE.HemisphereLight(0xdcebff, 0x8a7656, 1.0));
+const hemi = new THREE.HemisphereLight(0xdcebff, 0x8a7656, 1.0);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1d6, 2.6);
 sun.position.set(35, 60, 25);
 sun.castShadow = true;
@@ -58,8 +60,6 @@ weaponScene.add(wLight);
 game.renderer = renderer;
 game.scene = scene;
 game.camera = camera;
-game.world = buildMap(scene);
-game.blockers = game.world.meshes.slice();
 game.worldLOS = worldLOS;
 game.fx = new Effects(scene);
 game.abilities = new AbilitySystem();
@@ -89,18 +89,38 @@ const spikeMesh = new THREE.Group();
   spikeMesh.visible = false;
   scene.add(spikeMesh);
 }
-const orbMeshes = game.world.orbs.map((p) => {
-  const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshStandardMaterial({
-    color: 0x9ff7ff, emissive: 0x3fd8ff, emissiveIntensity: 0.9, transparent: true, opacity: 0.9,
-  }));
-  m.position.copy(p).setY(1.1);
-  m.visible = false;
-  scene.add(m);
-  return m;
-});
+let orbMeshes = [];
+const orbGeo = new THREE.OctahedronGeometry(0.35);
+const orbMat = new THREE.MeshStandardMaterial({ color: 0x9ff7ff, emissive: 0x3fd8ff, emissiveIntensity: 0.9, transparent: true, opacity: 0.9 });
+
+// ---------- Harita havuzu: her maçta rastgele harita ----------
+let barriersOn = false;
+function loadMap(key) {
+  if (game.world && game.world.key === key) return;
+  if (game.world) {
+    for (const b of game.world.barriers) removeCollider(b.box);
+    unloadMap(scene, game.world);
+  }
+  barriersOn = false;
+  for (const o of orbMeshes) scene.remove(o);
+  game.world = buildMap(scene, key, MAPS[key], { sun, hemi, renderer });
+  game.blockers = game.world.meshes.slice();
+  orbMeshes = game.world.orbs.map((p) => {
+    const m = new THREE.Mesh(orbGeo, orbMat);
+    m.position.copy(p).setY(1.1);
+    m.visible = false;
+    scene.add(m);
+    return m;
+  });
+  game.hud.mapCanvas = null; // mini harita yeniden çizilsin
+}
+function randomMapKey() {
+  const options = MAP_KEYS.filter((k) => !game.world || k !== game.world.key);
+  return options[Math.floor(Math.random() * options.length)];
+}
+loadMap(MAP_KEYS[Math.floor(Math.random() * MAP_KEYS.length)]);
 
 // Satın alma aşamasında doğuş bölgelerini kapatan mavi cam bariyerler
-let barriersOn = false;
 function updateBarriers(on) {
   if (on === barriersOn) return;
   barriersOn = on;
@@ -113,7 +133,7 @@ function updateBarriers(on) {
 function updateWorldProps() {
   const m = game.match;
   updateBarriers(!!m && m.phase === 'buy' && !m.mode.prePlanted && (game.state === 'playing'));
-  if (barriersOn) {
+  if (barriersOn && game.world.barriers.length) {
     const k = 0.75 + Math.sin(game.time * 2) * 0.1;
     game.world.barriers[0].mesh.material.opacity = k;
   }
@@ -348,6 +368,8 @@ function startHostMatch(modeKey, agent) {
   resetWorld();
   game.isHost = true;
   game.net = net.role === 'host' ? net : null;
+  loadMap(game.forceMap || randomMapKey());
+  game.forceMap = null;
   game.match = new Match(modeKey);
   game.bots = new BotManager();
   game.match.populate(game.settings.name, agent);
@@ -365,6 +387,7 @@ function startClientMatch(msg) {
   game.net = net;
   game.localId = msg.id;
   lastHostMsg = performance.now();
+  if (MAPS[msg.map]) loadMap(msg.map);
   game.match = new Match(msg.mode);
   game.bots = null;
   enterPlaying();
@@ -424,7 +447,7 @@ function assignJoin(peer, msg) {
   slot.action = null;
   slot.ultWeapon = null;
   game.bots?.brains.delete(slot.id);
-  net.sendTo(peer, { t: 'welcome', id: slot.id, mode: game.match.modeKey });
+  net.sendTo(peer, { t: 'welcome', id: slot.id, mode: game.match.modeKey, map: game.world.key });
   net.sendTo(peer, game.match.snapshot());
   game.match.emit({ t: 'chat', n: 'SİSTEM', m: `${slot.name} maça katıldı!`, tm: slot.team });
 }
@@ -693,6 +716,7 @@ window.nexus = {
   tick,
   step(frames = 1, dt = 1 / 60) { for (let i = 0; i < frames; i++) tick(dt); },
   sim(frames = 1, dt = 1 / 60) { for (let i = 0; i < frames; i++) tick(dt, i === frames - 1); },
+  loadMap,
   search: (mode) => startSearch(mode),
   lock: (agent) => lockAgent(agent),
   net,
